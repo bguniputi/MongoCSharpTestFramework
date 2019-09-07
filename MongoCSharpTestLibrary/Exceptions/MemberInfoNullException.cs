@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace NextGenTestLibrary.Exceptions
 {
+    [Serializable]
     public class MemberInfoNullException : Exception
     {
         /// <summary>

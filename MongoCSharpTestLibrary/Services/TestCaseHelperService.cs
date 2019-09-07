@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace NextGenTestLibrary.Services
 {
-    public partial class TestCaseService
+    public partial class TestCaseService : IDisposable
     {
         /// <summary>
         /// Executable data driven testcases
@@ -249,6 +249,31 @@ namespace NextGenTestLibrary.Services
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Implementation of IDisposable pattern
+        /// </summary>
+        private bool disposed = false;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    mongoRepository.Dispose();
+                    testDataService.Dispose();
+                    dataFillService.Dispose();
+                }
+
+            }
+
+            this.disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

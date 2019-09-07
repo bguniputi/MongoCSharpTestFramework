@@ -10,7 +10,7 @@ using MongoTestDatabaseLibrary.Models;
 
 namespace NextGenTestLibrary.Utilities
 {
-    internal class DataFillService
+    internal class DataFillService : IDisposable
     {
         private readonly MongoRepository mongoRepository;
         private ITestModuleService testModuleService;
@@ -89,6 +89,29 @@ namespace NextGenTestLibrary.Utilities
                   testRepository.GetId(projectName);
                   testRepository.Update(new TestProjectModel() { IsActive = isActive });
             }
+        }
+
+        /// <summary>
+        /// Implementation of IDisposable pattern
+        /// </summary>
+        private bool disposed = false;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    mongoRepository.Dispose();
+                }
+
+            }
+
+            this.disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
     }

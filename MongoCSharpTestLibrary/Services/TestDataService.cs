@@ -9,7 +9,7 @@ using NextGenTestLibrary.Loggers;
 
 namespace NextGenTestLibrary.Services
 {
-    public class TestDataService : ITestDataService
+    public class TestDataService : ITestDataService , IDisposable
     {
         private readonly MongoRepository mongoRepository;
 
@@ -161,6 +161,29 @@ namespace NextGenTestLibrary.Services
                                         select globalTestData).FirstOrDefault();
 
             return globalTestDataFields.ExtraElements.ToDictionary();
+        }
+
+        /// <summary>
+        /// Implementation of IDisposable pattern
+        /// </summary>
+        private bool disposed = false;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    mongoRepository.Dispose();
+                }
+
+            }
+
+            this.disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -12,7 +12,7 @@ using System.Reflection;
 
 namespace NextGenTestLibrary.Services
 {
-    public class TestModuleService : ITestModuleService
+    public class TestModuleService : ITestModuleService, IDisposable
     {
         private readonly MongoRepository mongoRepository;
 
@@ -140,6 +140,29 @@ namespace NextGenTestLibrary.Services
                     .Where(m => m.IsActive == true)
                     .Select(m => m._id)
                     .ToList();
+        }
+
+        /// <summary>
+        /// Implementation of IDisposable pattern
+        /// </summary>
+        private bool disposed = false;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    mongoRepository.Dispose();
+                }
+
+            }
+
+            this.disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

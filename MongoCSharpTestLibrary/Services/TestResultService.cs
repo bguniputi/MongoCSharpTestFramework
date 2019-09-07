@@ -5,10 +5,11 @@ using MongoTestDatabaseLibrary.Models;
 using NextGenTestLibrary.Enums;
 using NextGenTestLibrary.Utilities;
 using System.Collections.Generic;
+using System;
 
 namespace NextGenTestLibrary.Services
 {
-    public class TestResultService : ITestResultService
+    public class TestResultService : ITestResultService, IDisposable
     {
         private readonly MongoRepository mongoRepository;
         public TestResultService()
@@ -35,6 +36,29 @@ namespace NextGenTestLibrary.Services
             };
 
             mongoRepository.GetTestResultRepository.Create(testResultModel);
+        }
+
+        /// <summary>
+        /// Implementation of IDisposable pattern
+        /// </summary>
+        private bool disposed = false;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    mongoRepository.Dispose();
+                }
+
+            }
+
+            this.disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }
