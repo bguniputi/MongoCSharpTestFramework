@@ -14,7 +14,7 @@ using NextGenTestLibrary.Loggers;
 
 namespace NextGenTestLibrary.Services
 {
-    public class TestClassService : ITestClassService
+    public class TestClassService : ITestClassService , IDisposable
     {
         private readonly MongoRepository mongoRepository;
         
@@ -42,6 +42,7 @@ namespace NextGenTestLibrary.Services
                 mongoRepository.GetTestClassRepository.Create(testClass);
             }
         }
+
         /// <summary>
         /// Get executable test classes
         /// </summary>
@@ -194,6 +195,27 @@ namespace NextGenTestLibrary.Services
             }
         }
 
+        /// <summary>
+        /// Implementation of IDisposable pattern
+        /// </summary>
+        private bool disposed = false;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    mongoRepository.Dispose();
+                }
 
+            }
+
+            this.disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }
