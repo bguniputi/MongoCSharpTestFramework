@@ -16,7 +16,10 @@ Steps:
 7. Restore the mongodb sample database
 8. Edit the App.config of the project and change the MongoDbContext connectionString
 9. Build the created above project
-10. Restore MongoTestDB into local/server machine
+10. Copy sample MongoTestDB from below path and restore into local/server machine 
+   
+   LINK: https://github.com/bguniputi/SampleMongoTestDatabase
+   
 11. Update the TestClassName in TestClasses collection according to your project namespace
 12. Update the TestCaseName respectively if required in TestCases collection
 13. Update the GlobalTestData respectively if required
