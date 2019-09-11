@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework.Interfaces;
+using static NUnit.Framework.TestContext;
 
 namespace NextGenTestLibrary.IServices
 {
@@ -40,6 +41,6 @@ namespace NextGenTestLibrary.IServices
         /// Capturing of TestStatus and insertion
         /// </summary>
         /// <param name="testStatus"></param>
-        void TestCaseResults(TestStatus testStatus);
+        void TestCaseResults(TestStatus testStatus, ResultAdapter resultAdapter);
     }
 }

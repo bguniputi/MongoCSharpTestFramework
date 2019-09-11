@@ -14,6 +14,7 @@ using NUnit.Framework.Interfaces;
 using MongoDB.Driver;
 using NextGenTestLibrary.Loggers;
 using MongoTestDatabaseLibrary.Models;
+using static NUnit.Framework.TestContext;
 
 namespace NextGenTestLibrary.Services
 {
@@ -68,9 +69,9 @@ namespace NextGenTestLibrary.Services
         /// <param name="testDataOrder"></param>
         public void ExecuteTestCase(string className, string testCaseName,int testDataOrder)
         {
-            TestResult testResult = TestResult.Inconclusive;
+            //TestResult testResult = TestResult.Inconclusive;
             object[] parameterArray = new object[] { className,testCaseName};
-            object[] endTestCaseParameterArray;
+            //object[] endTestCaseParameterArray;
             List<string> testResults = new List<string>();
 
             //Get ModulName
@@ -120,15 +121,11 @@ namespace NextGenTestLibrary.Services
                 }
 
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {                
-                ContextLogger.LogIfException(moduleName, className, testCaseName, ex.InnerException.ToString());
-                endTestCaseParameterArray = new object[] { moduleName, className, testCaseName, false };
-                EndOfTestCaseExecution.Invoke(myObj, endTestCaseParameterArray);
-                testResult = TestResult.Failed;
-                if (testResults.Count == 0)
-                    testResults.Add("Test is executed with:" + testResult.ToString() + "status");
-                testResultService.InsertTestResults(testCaseName, testResult, testResults.ToArray());
+                ContextLogger.LogIfException(moduleName, className, testCaseName, exception.InnerException.ToString());
+                throw exception;
+                
             }
 
         }
@@ -136,7 +133,7 @@ namespace NextGenTestLibrary.Services
         /// TestCase results
         /// </summary>
         /// <param name="testStatus"></param>
-        public void TestCaseResults(TestStatus testStatus)
+        public void TestCaseResults(TestStatus testStatus, ResultAdapter resultAdapter)
         {
             object[] endTestCaseParameterArray;
             List<string> testResults = new List<string>();
@@ -176,6 +173,8 @@ namespace NextGenTestLibrary.Services
                     endTestCaseParameterArray = new object[] { moduleName, className, testCaseName, false };
                     EndOfTestCaseExecution.Invoke(myObj, endTestCaseParameterArray);
                     testResult = TestResult.Failed;
+                    testResults.Add(resultAdapter.Message);
+                    testResults.Add(resultAdapter.StackTrace);
 
                 }
                 else if (testStatus == TestStatus.Skipped)
@@ -192,6 +191,7 @@ namespace NextGenTestLibrary.Services
                     endTestCaseParameterArray = new object[] { moduleName, className, testCaseName, false };
                     EndOfTestCaseExecution.Invoke(myObj, endTestCaseParameterArray);
                     testResult = TestResult.Skipped;
+                    testResults.Add(resultAdapter.Message);
 
                 }
                 else if (testStatus == TestStatus.Inconclusive)
