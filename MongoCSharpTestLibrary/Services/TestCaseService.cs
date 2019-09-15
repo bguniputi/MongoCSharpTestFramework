@@ -15,6 +15,8 @@ using MongoDB.Driver;
 using NextGenTestLibrary.Loggers;
 using MongoTestDatabaseLibrary.Models;
 using static NUnit.Framework.TestContext;
+using NUnit.Framework.Internal;
+using TestResult = NextGenTestLibrary.Enums.TestResult;
 
 namespace NextGenTestLibrary.Services
 {
@@ -34,6 +36,10 @@ namespace NextGenTestLibrary.Services
         private static Stopwatch watch;
         private static string timeElapsed;
 
+        /// <summary>
+        /// Object is used for Re execution of testcase
+        /// </summary>
+        public static readonly object lockReTestExecutionObj = new object();
 
         public TestCaseService()
         {
@@ -69,10 +75,7 @@ namespace NextGenTestLibrary.Services
         /// <param name="testDataOrder"></param>
         public void ExecuteTestCase(string className, string testCaseName,int testDataOrder)
         {
-            //TestResult testResult = TestResult.Inconclusive;
-            object[] parameterArray = new object[] { className,testCaseName};
-            //object[] endTestCaseParameterArray;
-            List<string> testResults = new List<string>();
+            object[] endTestCaseParameterArray;
 
             //Get ModulName
             ObjectId moduleId = mongoRepository.GetTestClassRepository.GetByName(className).Module_id;
@@ -114,6 +117,7 @@ namespace NextGenTestLibrary.Services
                     }
 
                     ExecuteMethod.Invoke(myObj, null);
+                    TestStatus result = TestExecutionContext.CurrentContext.CurrentResult.ResultState.Status;
                 }
                 else
                 {
@@ -121,11 +125,91 @@ namespace NextGenTestLibrary.Services
                 }
 
             }
-            catch (Exception exception)
-            {                
-                ContextLogger.LogIfException(moduleName, className, testCaseName, exception.InnerException.ToString());
-                throw exception;
-                
+            catch (TargetInvocationException exception) when (exception.InnerException is Exception)
+            {
+                ContextLogger.LogIfException
+                    (moduleName, className, testCaseName, exception.Message);
+                if (Initialize.RetryOnException)
+                {
+                    IList<Type> attributes = GetAvailableAttributes(ExecuteMethod);
+                    bool isAvailable = attributes.Any(attribute => attribute.Name.Equals("RetryByAttribute"));
+                    if (isAvailable)
+                    {
+                        if (Initialize.DisplayExecutionTimeInLogger)
+                        {
+                            watch.Stop();
+                            timeElapsed = watch.ElapsedMilliseconds.ToString();
+                            ContextLogger.LogAfterTestCaseFails
+                                (moduleName, className, testCaseName, testDataService.TestData, timeElapsed, "Failed On Exception");
+                        }
+
+                        //Execute end of testcase execution if any object needs to be disposed
+                        endTestCaseParameterArray = new object[] { moduleName, className, testCaseName, false };
+                        EndOfTestCaseExecution.Invoke(myObj, endTestCaseParameterArray);
+
+                        //Retry attribute object
+                        RetryByAttribute retryAttribute = ExecuteMethod.GetRetryByAttribute();
+                        lock (lockReTestExecutionObj)
+                        {
+                            //Re-Execution of Exception TestCase
+                            ReExecutionOfTestCase
+                                (moduleName, className, testCaseName, testDataOrder, retryAttribute._tryCount, myClass, myObj);
+                        }
+
+                    }
+                    else
+                    {
+                        throw exception;
+                    }
+                }
+                else
+                {
+                    throw exception;
+                }
+
+            }
+            catch (TargetInvocationException exception) when (exception.InnerException is AssertionException)
+            {
+                AssertionException assertException = exception.InnerException as AssertionException;
+              
+                ContextLogger.LogIfException(moduleName, className, testCaseName, exception.Message);
+                if (Initialize.RetryOnException)
+                {
+                    IList<Type> attributes = GetAvailableAttributes(ExecuteMethod);
+                    bool isAvailable = attributes.Any(attribute => attribute.Name.Equals("RetryByAttribute"));
+                    if (isAvailable)
+                    {
+                        if (Initialize.DisplayExecutionTimeInLogger)
+                        {
+                            watch.Stop();
+                            timeElapsed = watch.ElapsedMilliseconds.ToString();
+                            ContextLogger.LogAfterTestCaseFails
+                                (moduleName, className, testCaseName, testDataService.TestData, timeElapsed,assertException.ResultState.Status);
+                        }
+                        //Execute end of testcase execution if any object needs to be disposed
+                        endTestCaseParameterArray = new object[] { moduleName, className, testCaseName, false };
+                        EndOfTestCaseExecution.Invoke(myObj, endTestCaseParameterArray);
+
+                        //Retry attribute object
+                        RetryByAttribute retryAttribute = ExecuteMethod.GetRetryByAttribute();
+                        lock (lockReTestExecutionObj)
+                        {
+                            //Re-Execution of Exception TestCase
+                            ReExecutionOfTestCase
+                                (moduleName, className, testCaseName, testDataOrder, retryAttribute._tryCount, myClass, myObj);
+                        }
+
+                    }
+                    else
+                    {
+                        throw exception;
+                    }
+                }
+                else
+                {
+                    throw exception;
+                }
+
             }
 
         }
@@ -133,8 +217,11 @@ namespace NextGenTestLibrary.Services
         /// TestCase results
         /// </summary>
         /// <param name="testStatus"></param>
-        public void TestCaseResults(TestStatus testStatus, ResultAdapter resultAdapter)
+        public void TestCaseResults(TestContext testContext)
         {
+            TestStatus testStatus = testContext.Result.Outcome.Status;
+            ResultAdapter resultAdapter = testContext.Result;
+
             object[] endTestCaseParameterArray;
             List<string> testResults = new List<string>();
             TestResult testResult = TestResult.Inconclusive;
@@ -219,7 +306,7 @@ namespace NextGenTestLibrary.Services
             }
             catch (Exception ex)
             {
-                ContextLogger.LogIfException(moduleName, className, testCaseName, ex.InnerException.ToString());
+                ContextLogger.LogIfException(moduleName, className, testCaseName, ex.Message);
                 endTestCaseParameterArray = new object[] { moduleName, className, testCaseName, false };
                 EndOfTestCaseExecution.Invoke(myObj, endTestCaseParameterArray);
                 testResult = TestResult.Failed;

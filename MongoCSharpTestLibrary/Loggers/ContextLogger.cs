@@ -137,5 +137,43 @@ namespace NextGenTestLibrary.Loggers
 
             Logger.log.Fatal("Error occured while executing TestCase: {@logDetailObj}", logObjIfException);
         }
+
+        /// <summary>
+        /// Log before retry start
+        /// </summary>
+        /// <param name="moduleName"></param>
+        /// <param name="testClassName"></param>
+        /// <param name="testCaseName"></param>
+        /// <param name="testCaseData"></param>
+        public static void LogRetryStart
+            (string moduleName, string testClassName, string testCaseName, object testCaseData)
+        {
+            var logObjBefore = new
+            {
+                ModuleName = moduleName,
+                TestClassName = testClassName,
+                TestCaseName = testClassName,
+            };
+
+            Logger.log.Information("TestCase Re-Execution Start:" + testCaseName + ":{@logDetailObj}", logObjBefore);
+            Logger.log.Debug("Test Data: {@logDetailObj} ", testCaseData);
+        }
+
+        public static void LogAfterRetryTestCaseFails
+            (string moduleName, string testClassName, string testCaseName, object testCaseData, string timeElapsed,
+                object validationResult)
+        {
+            var logObjAfterFails = new
+            {
+                ModuleName = moduleName,
+                TestClassName = testClassName,
+                TestCaseName = testClassName,
+                ElaspedTime = timeElapsed,
+                testCaseData
+            };
+
+            Logger.log.Error("TestCase Fails" + testCaseName + ":{@logDetailObj}", logObjAfterFails);
+            Logger.log.Debug("{logDetailObj}", validationResult);
+        }
     }
 }

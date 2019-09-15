@@ -14,50 +14,30 @@ namespace NextGenTestLibrary.Utilities
     {
         public static readonly object lockObj = new object();
         private static ObjectId _projectId;
-        private static bool _DisplayExecutionTimeInLogger;
-        private static string _projectName;
-        private static string _testCycle;
-        private static bool _isDependenctEnabled;
+        
         /// <summary>
         /// Default constructor with initialization of settings
         /// </summary>
         static Initialize()
         {
-            _projectName = ConfigurationManager.AppSettings["ProjectName"];
-            _DisplayExecutionTimeInLogger = Convert.ToBoolean(ConfigurationManager.AppSettings["DisplayExecutionTimeInLog"]);
-            _testCycle = ConfigurationManager.AppSettings["TestCycle"];
-            _isDependenctEnabled = Convert.ToBoolean(ConfigurationManager.AppSettings["IsDependencyCheckEnabled"]);
+            ProjectName = ConfigurationManager.AppSettings["ProjectName"];
+            DisplayExecutionTimeInLogger = Convert.ToBoolean(ConfigurationManager.AppSettings["DisplayExecutionTimeInLog"]);
+            TestCycle = ConfigurationManager.AppSettings["TestCycle"];
+            IsDependencyCheckEnabled = Convert.ToBoolean(ConfigurationManager.AppSettings["IsDependencyCheckEnabled"]);
+            RetryOnException = Convert.ToBoolean(ConfigurationManager.AppSettings["RetryOnException"]);
         }
         /// <summary>
         /// Get project name
         /// </summary>
-        public static string ProjectName
-        {
-            get
-            {
-                return _projectName;
-            }
-        }
+        public static string ProjectName { get; private set; }
         /// <summary>
         /// Get whether execution time in logger is required
         /// </summary>
-        public static bool DisplayExecutionTimeInLogger
-        {
-            get
-            {
-                return _DisplayExecutionTimeInLogger;
-            }
-        }
+        public static bool DisplayExecutionTimeInLogger { get; private set; }
         /// <summary>
         /// Get test cycle
         /// </summary>
-        public static string TestCycle
-        {
-            get
-            {
-                return _testCycle;
-            }
-        }
+        public static string TestCycle { get; private set; }
         /// <summary>
         /// Get project id
         /// </summary>
@@ -76,13 +56,11 @@ namespace NextGenTestLibrary.Utilities
         /// <summary>
         /// Is dependency check enabled
         /// </summary>
-        public static bool IsDependencyCheckEnabled
-        {
-            get
-            {
-                return _isDependenctEnabled;
-            }
-        }
+        public static bool IsDependencyCheckEnabled { get; private set; }
+        /// <summary>
+        /// RetryOnFail
+        /// </summary>
+        public static bool RetryOnException { get; private set; }
         /// <summary>
         /// Load Configuration
         /// </summary>
@@ -90,11 +68,11 @@ namespace NextGenTestLibrary.Utilities
         {
             lock (lockObj)
             {
-                _projectId = new TestProjectService().GetProjectId(_projectName);
+                _projectId = new TestProjectService().GetProjectId(ProjectName);
                 if (_projectId == null)
                 {
                     new DataFillService().UpdateProjectData();
-                    _projectId = new TestProjectService().GetProjectId(_projectName);
+                    _projectId = new TestProjectService().GetProjectId(ProjectName);
                 }
             }
         }

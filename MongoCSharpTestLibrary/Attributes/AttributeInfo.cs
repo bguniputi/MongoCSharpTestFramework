@@ -81,5 +81,22 @@ namespace NextGenTestLibrary.Attributes
             return attribute;
 
         }
+
+        /// <summary>
+        /// Get Retry count Attribute info
+        /// </summary>
+        /// <param name="memberInfo"></param>
+        /// <returns></returns>
+        internal static RetryByAttribute GetRetryByAttribute(this MemberInfo memberInfo)
+        {
+            if (memberInfo == null)
+            {
+                throw new MemberInfoNullException("Member info object is null");
+            }
+
+            RetryByAttribute retryByAttribute = Attribute.GetCustomAttribute(memberInfo, typeof(RetryByAttribute))
+                                                                                as RetryByAttribute;
+            return retryByAttribute;
+        }
     }
 }

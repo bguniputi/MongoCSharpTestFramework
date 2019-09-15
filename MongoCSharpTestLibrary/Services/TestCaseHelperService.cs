@@ -6,12 +6,19 @@ using MongoTestDatabaseLibrary.Models;
 using NextGenTestLibrary.Attributes;
 using NextGenTestLibrary.Enums;
 using NextGenTestLibrary.Loggers;
+using NextGenTestLibrary.Utilities;
+using NUnit.Framework;
+using NUnit.Framework.Interfaces;
+using NUnit.Framework.Internal;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Logger = NextGenTestLibrary.Loggers.Logger;
+using TestResult = NextGenTestLibrary.Enums.TestResult;
 
 namespace NextGenTestLibrary.Services
 {
@@ -176,6 +183,10 @@ namespace NextGenTestLibrary.Services
                     {
                         attributeTypes.Add(attributeType);
                     }
+                    else if (attributeType == typeof(RetryByAttribute))
+                    {
+                        attributeTypes.Add(attributeType);
+                    }
                 }
             }
 
@@ -249,6 +260,86 @@ namespace NextGenTestLibrary.Services
                     }
                 }
             }
+        }
+
+        private void ReExecutionOfTestCase
+            (string moduleName,string className, string testCaseName, 
+            int testDataOrder, int retryCount, Type myClass, TestBaseClassService testBaseClassServiceObj )
+        {
+            object[] endTestCaseParameterArray;
+            TestResult testResult = TestResult.Inconclusive;
+            Exception exceptionType = null;
+            
+            int trackRetryCount = 0;
+            MethodInfo ExecuteMethod = myClass.GetMethod(testCaseName);
+            MethodInfo EndOfTestCaseExecution = myClass.GetMethod("EndOfTestCaseExecution");
+
+            try
+            {
+                //Intial value of i is 1
+                for (int i=1;i<=retryCount;i++)
+                {
+                    try
+                    {
+                        trackRetryCount = i;
+                        // Get Global TestData for the project
+                        testDataService.FillGlobalTestData(mongoRepository.GetTestProjectRepository.GetId(Initialize.ProjectName));
+                        // Get test data for the current testCase
+                        testDataService.FillTestData(mongoRepository.GetTestCaseRepository.GetId(testCaseName), testDataOrder);
+
+                        //Logging before Re-testCase Execute
+                        ContextLogger.LogRetryStart(moduleName, className, testCaseName, testDataService.TestData);
+
+                        //STOPWATCH FOR CALCULATING EXECUTION TIME OF TESTCASE.
+                        dynamic clock = null;
+
+                        //Execution Timein Logger Condition
+                        if (Initialize.DisplayExecutionTimeInLogger)
+                        {
+                            clock = Stopwatch.StartNew();
+                        }
+
+                        ExecuteMethod.Invoke(testBaseClassServiceObj, null);
+                        testResult = TestResult.Passed;
+
+                    }
+                    catch (Exception exception)
+                    {
+                        exceptionType = exception;
+                        ContextLogger.LogIfException(moduleName, className, testCaseName, exception.Message);
+                    
+                        //Logging if test case fails
+                        if (Initialize.DisplayExecutionTimeInLogger)
+                        {
+                            watch.Stop();
+                            timeElapsed = watch.ElapsedMilliseconds.ToString();
+                        }
+
+                        //Logging testCase details after fails
+                        ContextLogger.LogAfterRetryTestCaseFails(moduleName, className, testCaseName, testDataService.TestData, timeElapsed,"Failed On Exception");
+                        if (trackRetryCount != retryCount)
+                        {
+                            endTestCaseParameterArray = new object[] { moduleName, className, testCaseName, false };
+                            EndOfTestCaseExecution.Invoke(testBaseClassServiceObj, endTestCaseParameterArray);
+                        }
+                        testResult = TestResult.Failed;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                ContextLogger.LogIfException(moduleName, className, testCaseName, exception.Message);
+                throw exception;
+            }
+            finally
+            {
+
+                if (testResult.Equals(TestResult.Failed))
+                {
+                    throw exceptionType;
+                }
+            }
+
         }
 
         /// <summary>
