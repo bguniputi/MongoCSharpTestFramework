@@ -97,6 +97,7 @@
     <Compile Include="Attributes\DependentAttribute.cs" />
     <Compile Include="Attributes\ExecuteAttribute.cs" />
     <Compile Include="Attributes\ModuleAttribute.cs" />
+    <Compile Include="Attributes\RetryByAttribute.cs" />
     <Compile Include="Attributes\TestInfoAttribute.cs" />
     <Compile Include="Attributes\TestOrderAttribute.cs" />
     <Compile Include="Enums\ExecuteType.cs" />
