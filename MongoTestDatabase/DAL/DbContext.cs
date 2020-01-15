@@ -6,8 +6,10 @@ namespace MongoTestDatabaseLibrary.DAL
 {
     internal abstract class DbContext : IDisposable
     {
-        private IMongoClient client;
-        
+        private IMongoClient _client;
+        private IMongoDatabase _Database;
+        private bool isDisposed = false;
+
         /// <summary>
         /// Provide the Mongodb Connection string 
         /// </summary>
@@ -15,28 +17,41 @@ namespace MongoTestDatabaseLibrary.DAL
         protected DbContext(string connectionString)
         {
             MongoUrl url = new MongoUrl(connectionString);
-            client = GetMongoClient.Instance(url);
-            GetDatabase = GetMongoDatabase.Database(client,url.DatabaseName);
+            _client = GetMongoClient.Instance(url);
+            _Database = GetMongoDatabase.Database(_client,url.DatabaseName);
         }
-        /// <summary>
-        /// Get Database
-        /// </summary>
-        protected IMongoDatabase GetDatabase { get; private set; }
+
+        public IMongoDatabase Database => _Database;
         /// <summary>
         /// Drop the existing database
         /// </summary>
         /// <param name="name"></param>
+
         protected void DropDatabase(string name)
         {
-            client.DropDatabase(name);
+            _client.DropDatabase(name);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (isDisposed)
+                return;
+
+            if (disposing)
+            {
+                _client = null;
+                _Database = null;
+            }
+
+            isDisposed = true;
         }
         /// <summary>
         /// Dispose method
         /// </summary>
-        public virtual void Dispose()
+        public void Dispose()
         {
-            GetDatabase = null;
-            client = null;                      
+            Dispose(true);
+            GC.SuppressFinalize(this);                     
         }
     }
 }

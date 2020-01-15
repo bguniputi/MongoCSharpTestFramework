@@ -146,6 +146,8 @@ namespace NextGenTestLibrary.Services
                                       where testData.TestCase_Id == testcaseID && testData.IsActive == true
                                       && testData.Order == testDataOrder
                                       select testData).FirstOrDefault();
+            if (testDataFields == null)
+                return new Dictionary<string, object>();
            
             return testDataFields.ExtraElements.ToDictionary();
         }
@@ -159,6 +161,9 @@ namespace NextGenTestLibrary.Services
             var globalTestDataFields = (from globalTestData in mongoRepository.GetGlobalTestDataRepository.GetAll()
                                         where globalTestData.Project_id == projectId && globalTestData.IsActive == true
                                         select globalTestData).FirstOrDefault();
+
+            if (globalTestDataFields == null)
+                return new Dictionary<string, object>();
 
             return globalTestDataFields.ExtraElements.ToDictionary();
         }

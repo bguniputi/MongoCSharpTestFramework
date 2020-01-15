@@ -7,7 +7,8 @@ namespace MongoTestDatabaseLibrary.DAL
 {
     public class MongoRepository : IDisposable
     {
-        private MongoDbContext context;
+        private bool isDisposed = false;
+        private MongoDbContext _context;
         private ITestProjectRepository<TestProjectModel> testProjectRepository;       
         private ITestCaseRepository<TestCaseModel> testCaseRepository;
         private ITestDataRepository<TestDataModel> testDataRepository;
@@ -21,7 +22,7 @@ namespace MongoTestDatabaseLibrary.DAL
         /// </summary>
         public MongoRepository()
         {
-            context = new MongoDbContext();
+            _context = new MongoDbContext();
         }
         /// <summary>
         /// Project Repository
@@ -32,7 +33,7 @@ namespace MongoTestDatabaseLibrary.DAL
             {
                 if (this.testProjectRepository == null)
                 {
-                    this.testProjectRepository = new TestProjectRespository(context.TestProjects);
+                    this.testProjectRepository = new TestProjectRespository(_context.TestProjects);
                 }
 
                 return testProjectRepository;
@@ -47,7 +48,7 @@ namespace MongoTestDatabaseLibrary.DAL
             {
                 if (testCaseRepository == null)
                 {
-                    this.testCaseRepository = new TestCaseRepository(context.TestCases);
+                    this.testCaseRepository = new TestCaseRepository(_context.TestCases);
                 }
 
                 return testCaseRepository;
@@ -62,7 +63,7 @@ namespace MongoTestDatabaseLibrary.DAL
             {
                 if(testDataRepository == null)
                 {
-                    this.testDataRepository = new TestDataRepository(context.TestDatas);
+                    this.testDataRepository = new TestDataRepository(_context.TestDatas);
                 }
 
                 return testDataRepository;
@@ -77,7 +78,7 @@ namespace MongoTestDatabaseLibrary.DAL
             {
                 if (testResultRepository == null)
                 {
-                    this.testResultRepository = new TestResultRepository(context.TestResults);
+                    this.testResultRepository = new TestResultRepository(_context.TestResults);
                 }
 
                 return testResultRepository;
@@ -92,7 +93,7 @@ namespace MongoTestDatabaseLibrary.DAL
             {
                 if (testModuleRepository == null)
                 {
-                    this.testModuleRepository = new TestModuleRepository(context.TestModules);
+                    this.testModuleRepository = new TestModuleRepository(_context.TestModules);
                 }
 
                 return testModuleRepository;
@@ -107,7 +108,7 @@ namespace MongoTestDatabaseLibrary.DAL
             {
                 if (globalTestDataRepository == null)
                 {
-                    this.globalTestDataRepository = new GlobalTestDataRepository(context.GlobalTestDatas);
+                    this.globalTestDataRepository = new GlobalTestDataRepository(_context.GlobalTestDatas);
                 }
 
                 return globalTestDataRepository;
@@ -122,28 +123,26 @@ namespace MongoTestDatabaseLibrary.DAL
             {
                 if(testClassRepository == null)
                 {
-                    this.testClassRepository = new TestClassRepository(context.TestClasses);
+                    this.testClassRepository = new TestClassRepository(_context.TestClasses);
                 }
 
                 return testClassRepository;
             }
         }
         /// <summary>
-        /// Implementation of IDisposable pattern
+        /// Disposible pattern implementation
         /// </summary>
-        private bool disposed = false;
+        /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (isDisposed)
+                return;
+            if (disposing)
             {
-                if (disposing)
-                {
-                    context.Dispose();
-                }
-
+                _context.Dispose();
             }
 
-            this.disposed = true;
+            isDisposed = true;
         }
         public void Dispose()
         {
